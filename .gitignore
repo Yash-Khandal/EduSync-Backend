@@ -1,2 +1,12 @@
+# Ignore user-specific files
+.vs/
+*.user
+*.suo
+
+# Build results
+/bin/
+/obj/
+
+# Others
 appsettings.json
 appsettings.Development.json

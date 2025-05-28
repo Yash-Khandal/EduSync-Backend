@@ -59,7 +59,7 @@ namespace EduSync.Controllers
                 UserId = resultForCreationDto.UserId,
                 Score = resultForCreationDto.Score,
                 AttemptDate = DateTime.UtcNow,
-                Published = false // <-- Default to not published
+                Published = false // Default to not published
             };
 
             _context.Results.Add(result);
@@ -185,6 +185,23 @@ namespace EduSync.Controllers
             await _context.SaveChangesAsync();
 
             return Ok("Results published successfully.");
+        }
+
+        // POST: api/results/unpublish/{assessmentId}
+        [HttpPost("unpublish/{assessmentId}")]
+        public async Task<IActionResult> UnpublishResults(Guid assessmentId)
+        {
+            var results = await _context.Results.Where(r => r.AssessmentId == assessmentId).ToListAsync();
+            if (results == null || results.Count == 0)
+                return NotFound("No results found for this assessment.");
+
+            foreach (var result in results)
+            {
+                result.Published = false;
+            }
+            await _context.SaveChangesAsync();
+
+            return Ok("Results unpublished successfully.");
         }
     }
 }
