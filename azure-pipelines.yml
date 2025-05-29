@@ -5,7 +5,7 @@ pool:
   vmImage: 'windows-latest'
 
 variables:
-  solution: 'EduSync.API.sln'   # Change if your .sln file name or path is different
+  solution: 'EduSync.API.sln'
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
 
@@ -14,7 +14,7 @@ steps:
   displayName: 'Install .NET SDK'
   inputs:
     packageType: 'sdk'
-    version: '8.x' # Use your actual .NET SDK version
+    version: '8.x'
 
 - task: NuGetToolInstaller@1
 
@@ -27,7 +27,7 @@ steps:
   displayName: 'Build solution'
   inputs:
     solution: '$(solution)'
-    msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:PackageLocation="$(build.artifactStagingDirectory)"'
+    msbuildArgs: '/p:DeployOnBuild=true /p:PublishProfile=FolderProfile /p:WebPublishMethod=FileSystem /p:DeleteExistingFiles=True /p:publishUrl="$(Build.ArtifactStagingDirectory)/WebAppContent"'
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
@@ -37,21 +37,27 @@ steps:
     platform: '$(buildPlatform)'
     configuration: '$(buildConfiguration)'
 
+- task: ArchiveFiles@2
+  displayName: 'Archive published site'
+  inputs:
+    rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/WebAppContent'
+    includeRootFolder: false
+    archiveType: 'zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/WebAppContent.zip'
+    replaceExistingArchive: true
+
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact'
   inputs:
-    PathtoPublish: '$(build.artifactStagingDirectory)'
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)/WebAppContent.zip'
     ArtifactName: 'drop'
     publishLocation: 'Container'
 
-# -------------------------------
-# Deploy to Azure Web App (Backend)
-# -------------------------------
 - task: AzureWebApp@1
   displayName: 'Deploy to Azure Web App'
   inputs:
-    azureSubscription: 'EduSyncConnection'        # From your service connections screenshot
+    azureSubscription: 'EduSyncConnection'
     appType: 'webApp'
-    appName: 'EduSync-Backpart'                  # From your App Service screenshot
-    package: '$(build.artifactStagingDirectory)/**/*.zip'
-    resourceGroupName: 'myresource'              # From your App Service screenshot
+    appName: 'EduSync-Backpart'
+    package: '$(Build.ArtifactStagingDirectory)/WebAppContent.zip'
+    resourceGroupName: 'myresource'
