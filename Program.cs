@@ -1,31 +1,33 @@
-// EduSync/Program.cs (Backend Project)
+// EduSync/Program.cs
 
 using Microsoft.EntityFrameworkCore;
 using EduSync.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Define a specific CORS policy name
-var MyAllowSpecificOrigins = "_myAllowSpecificOrigins"; // You can name this anything
+// CORS policy name
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
-// 1. Configure DbContext (Existing code)
+// Configure DbContext
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<EduSyncDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// 2. Add CORS services and define a policy
+// Add CORS services and policy
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(name: MyAllowSpecificOrigins,
-                      policy =>
-                      {
-                          policy.WithOrigins("http://localhost:3000") // Your frontend's origin
-                                .AllowAnyHeader()
-                                .AllowAnyMethod();
-                      });
+        policy =>
+        {
+            policy.WithOrigins(
+                "http://localhost:3000", // for local development
+                "https://polite-sand-06a25f500.6.azurestaticapps.net" // your deployed frontend
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+        });
 });
 
-// Add services to the container. (Existing code)
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -33,7 +35,6 @@ builder.Services.AddSingleton<EduSync.Services.BlobStorageService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -42,10 +43,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// 3. Use the CORS policy - IMPORTANT: Call UseCors before UseAuthorization and MapControllers
+// Correct middleware order: UseCors before UseAuthorization
 app.UseCors(MyAllowSpecificOrigins);
 
-app.UseAuthorization(); // This should come after UseCors
+app.UseAuthorization();
 
 app.MapControllers();
 
