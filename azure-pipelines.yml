@@ -5,7 +5,7 @@ pool:
   vmImage: 'windows-latest'
 
 variables:
-  solution: '**/*.sln'
+  solution: 'EduSync.API.sln'   # Change if your .sln file name or path is different
   buildPlatform: 'Any CPU'
   buildConfiguration: 'Release'
 
@@ -14,7 +14,7 @@ steps:
   displayName: 'Install .NET SDK'
   inputs:
     packageType: 'sdk'
-    version: '8.x' # Use your project's .NET SDK version
+    version: '8.x' # Use your actual .NET SDK version
 
 - task: NuGetToolInstaller@1
 
@@ -43,3 +43,15 @@ steps:
     PathtoPublish: '$(build.artifactStagingDirectory)'
     ArtifactName: 'drop'
     publishLocation: 'Container'
+
+# -------------------------------
+# Deploy to Azure Web App (Backend)
+# -------------------------------
+- task: AzureWebApp@1
+  displayName: 'Deploy to Azure Web App'
+  inputs:
+    azureSubscription: 'EduSyncConnection'        # From your service connections screenshot
+    appType: 'webApp'
+    appName: 'EduSync-Backpart'                  # From your App Service screenshot
+    package: '$(build.artifactStagingDirectory)/**/*.zip'
+    resourceGroupName: 'myresource'              # From your App Service screenshot
