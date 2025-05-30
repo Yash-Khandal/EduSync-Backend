@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using EduSync.Data;
 using EduSync.Models;
 using EduSync.DTOs;
+using EduSync.Services; // <-- Add this for EventHubSender
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,10 +16,13 @@ namespace EduSync.Controllers
     public class ResultsController : ControllerBase
     {
         private readonly EduSyncDbContext _context;
+        private readonly EventHubSender _eventHubSender; // <-- Add this
 
-        public ResultsController(EduSyncDbContext context)
+        // Inject EventHubSender in constructor
+        public ResultsController(EduSyncDbContext context, EventHubSender eventHubSender)
         {
             _context = context;
+            _eventHubSender = eventHubSender;
         }
 
         // POST: api/results
@@ -64,6 +68,10 @@ namespace EduSync.Controllers
 
             _context.Results.Add(result);
             await _context.SaveChangesAsync();
+
+            // Send event to Event Hub after result is created
+            await _eventHubSender.SendEventAsync(
+                $"Result created: Assessment '{assessment.Title}' (ID: {assessment.AssessmentId}), Student: {user.Name} ({user.UserId}), Score: {result.Score}");
 
             var resultToReturn = new ResultDto
             {
@@ -184,6 +192,10 @@ namespace EduSync.Controllers
             }
             await _context.SaveChangesAsync();
 
+            // Optionally, send an event for publishing results
+            await _eventHubSender.SendEventAsync(
+                $"Results published for Assessment ID: {assessmentId} at {DateTime.UtcNow}");
+
             return Ok("Results published successfully.");
         }
 
@@ -200,6 +212,10 @@ namespace EduSync.Controllers
                 result.Published = false;
             }
             await _context.SaveChangesAsync();
+
+            // Optionally, send an event for unpublishing results
+            await _eventHubSender.SendEventAsync(
+                $"Results unpublished for Assessment ID: {assessmentId} at {DateTime.UtcNow}");
 
             return Ok("Results unpublished successfully.");
         }
