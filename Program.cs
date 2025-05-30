@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using EduSync.Data;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSingleton<EduSync.Services.EventHubSender>();
 
 // CORS policy name
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
