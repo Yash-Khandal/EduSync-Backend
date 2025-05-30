@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using EduSync.Data;
 using EduSync.Models;
 using EduSync.DTOs;
+using EduSync.Services; // <-- Add this for EventHubSender
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,10 +16,13 @@ namespace EduSync.Controllers
     public class AssessmentsController : ControllerBase
     {
         private readonly EduSyncDbContext _context;
+        private readonly EventHubSender _eventHubSender; // <-- Add this line
 
-        public AssessmentsController(EduSyncDbContext context)
+        // Inject EventHubSender in constructor
+        public AssessmentsController(EduSyncDbContext context, EventHubSender eventHubSender)
         {
             _context = context;
+            _eventHubSender = eventHubSender;
         }
 
         // GET: api/assessments
@@ -77,6 +81,10 @@ namespace EduSync.Controllers
 
             _context.Assessments.Add(assessment);
             await _context.SaveChangesAsync();
+
+            // Send event to Event Hub after successful creation
+            await _eventHubSender.SendEventAsync(
+                $"Assessment created: {assessment.Title} (ID: {assessment.AssessmentId}) by Instructor: {course.InstructorId}");
 
             var assessmentToReturn = new AssessmentDto
             {
