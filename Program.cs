@@ -4,10 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using EduSync.Data;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddSingleton<EduSync.Services.EventHubSender>();
 
 // CORS policy name
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+builder.Services.AddSingleton<EduSync.Services.EventHubSender>();
+builder.Services.AddApplicationInsightsTelemetry();
 
 // Configure DbContext
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
